@@ -5,9 +5,9 @@ account: z1qv5x-megan-gilman
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8852422
-bundleId: 7111670
+bundleId: 7117076
 url: https://z1qv5x-megan-gilman.shinyapps.io/casestudy3/
-when: 1681949508.30707
-lastSyncTime: 1681949508.30707
+when: 1682054467.49529
+lastSyncTime: 1682054467.4953
 asMultiple: FALSE
 asStatic: FALSE

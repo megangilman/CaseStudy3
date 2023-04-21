@@ -11,7 +11,7 @@ airlineReportAll <- read.csv("test.csv")
 sum(grepl("neutral or dissatisfied", airlineReportAll$satisfaction))
 #  14573 of 25976 are "neutral or dissatisfied"
 
-
+mean(airlineReportSample)
 set.seed(11)
 
 airlineReportSample <- airlineReportAll[sample(nrow(airlineReportAll), 500), ]
@@ -29,7 +29,11 @@ cdplot(factor(satisfaction) ~ Flight.Distance, data=airlineData, main="Estimated
   geom_density(position="fill") +
   ylab('Probability') +
   theme(legend.position='bottom')
+ 
+#Create a line char comparing Flight.Distance and Satisfaction 
 
+ 
+ 
 airlineData$satisfaction <- ifelse(airlineData$satisfaction %in% c("neutral or dissatisfied"), 0, 1)
 airlineData$Customer.Type <- ifelse(airlineData$Customer.Type %in% c("disloyal Customer"), 0, 1)
 airlineData$Gender <- ifelse(airlineData$Gender %in% c("Male"), 0, 1)
@@ -38,6 +42,141 @@ airlineData$Class <- ifelse(airlineData$Class == "Business", 1,
                             ifelse(airlineData$Class == "Eco", 2,
                                    ifelse(airlineData$Class == "Eco Plus", 3, NA)))
 #1 for business 2 for eco 3 for eco plus 
+
+
+# Create the histogram based on Frequency of Satisfied by Distance 
+ggplot(data = airlineData, aes(x = Flight.Distance, fill = factor(satisfaction))) +
+  geom_histogram(binwidth = 100, position = "dodge") +
+  labs(x = "Flight Distance", y = "Frequency", title = "Frequency of Satisfied by Distance")
+#Here I found that there is a discrepancy in the total amount of times satisfied and neutral or dissatisifed are reported
+#Find the mean satisfaction for a distance 
+
+# Create a new column with the groups of 100 miles of Flight Distance
+airlineData$Distance.Group <- cut(airlineData$Flight.Distance, breaks = seq(0, 5500, by = 100))
+
+# Calculate the mean of Satisfaction for each group
+mean_satisfaction <- aggregate(satisfaction ~ Distance.Group, data = airlineData, mean)
+
+# Print the result
+mean_satisfaction
+
+# Create the scatter plot
+ggplot(data = mean_satisfaction, aes(x = Distance.Group, y = satisfaction)) +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_point() +
+  labs(x = "Flight Distance", y = "Satisfaction", title = "Satisfaction vs Distance")
+#Overall there seems to be a general trend in regards to the mean satisfaction based on distance 
+
+
+#Further analysis looking at how type of travel 
+personalTravel <- subset(airlineData, airlineData$Type.of.Travel == 1)
+
+#Find the mean satisfaction for a distance 
+# Create a new column with the groups of 100 miles of Flight Distance
+personalTravel$Distance.Group <- cut(personalTravel$Flight.Distance, breaks = seq(0, 5500, by = 100))
+
+# Calculate the mean of Satisfaction for each group
+mean_satisfactionPT <- aggregate(satisfaction ~ Distance.Group, data = personalTravel, mean)
+
+# Print the result
+mean_satisfactionPT
+
+# Create the scatter plot
+ggplot(data = mean_satisfactionPT, aes(x = Distance.Group, y = satisfaction)) +
+  geom_point() +
+  labs(x = "Flight Distance", y = "Satisfaction", title = "Satisfaction vs Distance")
+#When we consider adding type of travel to the equation there seems to be an overall lack of satisfaction when traveling personally 
+
+#Further analysis looking at how type of travel 
+businessTravel <- subset(airlineData, airlineData$Type.of.Travel == 0)
+
+#Find the mean satisfaction for a distance 
+# Create a new column with the groups of 100 miles of Flight Distance
+businessTravel$Distance.Group <- cut(businessTravel$Flight.Distance, breaks = seq(0, 5500, by = 100))
+
+# Calculate the mean of Satisfaction for each group
+mean_satisfactionBT <- aggregate(satisfaction ~ Distance.Group, data = businessTravel, mean)
+
+# Print the result
+mean_satisfactionBT
+
+# Create the scatter plot
+ggplot(data = mean_satisfactionBT, aes(x = Distance.Group, y = satisfaction)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  labs(x = "Flight Distance", y = "Satisfaction", title = "Satisfaction vs Distance")
+#Business travel proved to show more satisfaction but no solid trend. Generally when travelling longer you are more satisfied 
+
+
+
+#Why?
+#Maybe seat comfort or snacks?
+
+#Further analysis looking at how seat comfort 
+# Create the scatter plot
+ggplot(data = airlineReportSample, aes(x = Seat.comfort, y = satisfaction)) +
+  geom_point() +
+  labs(x = "Seat Comfort", y = "Satisfaction", title = "Satisfaction vs Seat Comfort")
+
+# Convert Seat.comfort to a factor with ordered levels
+airlineReportSample$Seat.comfort <- factor(airlineReportSample$Seat.comfort, levels = c(1, 2, 3, 4, 5), ordered = TRUE)
+
+airlineReportSample$satisfaction <- ifelse(airlineReportSample$satisfaction %in% c("neutral or dissatisfied"), 0, 1)
+
+# Calculate mean satisfaction for each level of Seat.comfort
+meanSeat <- airlineReportSample %>% 
+  group_by(Seat.comfort) %>% 
+  summarise(mean_satisfactionSEAT = mean(satisfaction))
+
+# View the resulting data frame
+meanSeat
+
+# Create scatter plot
+ggplot(meanSeat, aes(Seat.comfort, mean_satisfactionSEAT )) + 
+  geom_point() + 
+  labs(x = "Seat Comfort", y = "Satisfaction")
+
+
+#Now with food 
+#Further analysis looking at how food and drink impact satisfaction
+# Create the scatter plot
+ggplot(data = airlineReportSample, aes(x = Food.and.drink, y = satisfaction)) +
+  geom_point() +
+  labs(x = "Food and Drink", y = "Satisfaction", title = "Satisfaction vs Food and Drink")
+
+# Convert Food.and.Drink to a factor with ordered levels
+airlineReportSample$Food.and.drink <- factor(airlineReportSample$Food.and.drink, levels = c(1, 2, 3, 4, 5), ordered = TRUE)
+
+
+# Calculate mean satisfaction for each level of Seat.comfort
+meanFAD <- airlineReportSample %>% 
+  group_by(Food.and.drink) %>% 
+  summarise(mean_satisfactionFAD = mean(satisfaction))
+
+# View the resulting data frame
+meanFAD <- meanFAD[-6, ]
+
+# Create scatter plot
+ggplot(meanFAD, aes(Food.and.drink, mean_satisfactionFAD)) + 
+  geom_point() + 
+  labs(x = "Food and Drink", y = "Satisfaction")
+
+#DF with greater than or equal to 4 seat comfort 
+goe4seat <- airlineReportSample[airlineReportSample$Seat.comfort >= 4, ]
+
+# View the new data frame
+goe4seat
+
+mean(goe4seat$satisfaction)
+mean(airlineReportSample$satisfaction)
+
+test <- goe4seat[goe4seat$Food.and.drink >= 4, ]
+
+mean(test$satisfaction)
+#Furthermore if you do FAD
+
+
+
 
 head(airlineData)
 sum(airlineData$satisfaction)
